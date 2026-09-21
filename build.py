@@ -1,0 +1,344 @@
+# -*- coding: utf-8 -*-
+import os
+
+IMG = "C:/Users/EDY/WorkBuddy/2026-09-21-18-56-41/recipe-images"
+OUT = "C:/Users/EDY/WorkBuddy/2026-09-21-18-56-41/秋冬心脑养护食谱与计算器.html"
+
+imgs = {i: f"recipe-images/r{i}.webp" for i in range(1, 11)}
+cimgs = {i: f"recipe-images/c{i}.webp" for i in range(1, 10)}
+
+recipes = [
+    (1, "番茄炖牛腩（少油少盐）", ["番茄红素", "优质蛋白", "铁"],
+     "番茄熬出红素、牛腩补蛋白，秋冬季暖身又护血管。", "去浮油、少放盐，高血压友好。"),
+    (2, "清蒸三文鱼", ["Ω-3(EPA/DHA)", "优质蛋白", "维D"],
+     "深海鱼是Ω-3最佳膳食来源，帮着稳住血脂。", "每周2次替代红肉；海鲜过敏者不吃。"),
+    (3, "黑木耳拌洋葱", ["膳食纤维", "钾", "硫化物"],
+     "木耳多糖+洋葱硫化物，家常凉拌助力循环。", "少油醋拌，控盐。"),
+    (4, "紫菜蛋花汤", ["钾", "碘", "膳食纤维"],
+     "紫菜富钾与藻酸，清淡暖胃。", "出锅少放盐，味精免放。"),
+    (5, "燕麦红薯粥", ["β-葡聚糖", "可溶性纤维", "镁"],
+     "燕麦β-葡聚糖帮控胆固醇，红薯补纤维。", "替代精米白粥，稳血糖更友好。"),
+    (6, "蒜蓉西兰花", ["维C", "钾", "萝卜硫素"],
+     "十字花科富含硫化物，抗氧化护血管。", "快炒/焯水保营养，少盐。"),
+    (7, "山药枸杞排骨汤", ["粘蛋白", "多糖", "锌"],
+     "山药粘蛋白温和养脾，枸杞补抗氧化物。", "撇油、少盐，慢炖。"),
+    (8, "醋泡黑豆", ["花青素", "植物固醇", "不饱和脂肪酸"],
+     "黑豆皮花青素+植物固醇，零食级养护。", "每日一小把；服抗凝药者保持饮食稳定并问医生。"),
+    (9, "凉拌海带丝", ["膳食纤维", "钾", "褐藻酸"],
+     "海带褐藻酸助脂代谢，富钾利血压。", "焯水后少盐醋拌；甲腺异常者适量。"),
+    (10, "南瓜小米粥", ["β-胡萝卜素", "镁", "膳食纤维"],
+     "南瓜β-胡萝卜素+小米镁，温和暖胃。", "替代部分主食，控糖友好。"),
+]
+
+recipe_cards = ""
+for i, (idx, name, tags, desc, tip) in enumerate(recipes, 1):
+    tag_html = "".join(f'<span class="nut">{t}</span>' for t in tags)
+    recipe_cards += f'''
+    <div class="rcard">
+      <img src="{imgs[i]}" alt="{name}">
+      <div class="rbody">
+        <div class="rname">{idx}. {name}</div>
+        <div class="nutrow">{tag_html}</div>
+        <div class="rdesc">{desc}</div>
+        <div class="rtip">💡 {tip}</div>
+      </div>
+    </div>'''
+
+# ===== 中医九种体质 · 药食同源食疗方案 =====
+consts = [
+    (1, "平和质", "精力充沛、睡眠好、二便调、面色红润，舌淡红苔薄白。",
+     "均衡多样、七八分饱、顺应四时。",
+     ["山药","红枣","枸杞","莲子","百合","黑芝麻","核桃","蜂蜜","银耳","小米"],
+     ["山药红枣粥","杂粮饭","银耳百合羹"],
+     "宜：五谷果蔬均衡。忌：偏嗜、过饥过饱。"),
+    (2, "气虚质", "易疲乏气短、懒言易汗、面色萎黄，舌淡边有齿痕。",
+     "补气健脾、慢火久炖、忌生冷。",
+     ["山药","红枣","莲子","芡实","白扁豆","小米","茯苓","龙眼肉","蜂蜜","甘草"],
+     ["山药莲子粥","红枣小米粥","茯苓山药汤"],
+     "宜：温软易消化。忌：生冷、油腻、过度节食。"),
+    (3, "阳虚质", "畏寒怕冷、手足不温、喜热饮、精神不振，舌淡胖嫩。",
+     "温补脾肾、宜温热、忌生冷。",
+     ["生姜","干姜","肉桂","龙眼肉","核桃仁","小茴香","花椒","益智仁"],
+     ["生姜红枣茶","桂圆核桃粥","肉桂红糖饮"],
+     "宜：温热食材。忌：冰饮、生冷瓜果、寒性海鲜。"),
+    (4, "阴虚质", "手足心热、口燥咽干、喜冷饮、便干，舌红少津少苔。",
+     "滋阴润燥、清淡、忌辛温燥。",
+     ["银耳","百合","枸杞","桑葚","玉竹","黄精","铁皮石斛","蜂蜜","黑芝麻","麦冬"],
+     ["银耳百合羹","枸杞桑葚粥","冰糖炖雪梨"],
+     "宜：清润。忌：辛辣、羊肉、油炸、烟酒。"),
+    (5, "痰湿质", "体型肥胖、腹满松软、面油多汗黏、胸闷痰多，舌胖苔腻。",
+     "健脾化湿、清淡化痰、忌肥甘。",
+     ["薏苡仁","赤小豆","茯苓","白扁豆","陈皮","荷叶","昆布","山楂","冬瓜"],
+     ["薏米赤小豆粥","陈皮茯苓茶","荷叶山楂茶"],
+     "宜：清淡利湿。忌：甜腻、油炸、久坐少动。"),
+    (6, "湿热质", "面垢油光、易生痤疮、口苦口臭、便黏尿黄，舌红苔黄腻。",
+     "清热利湿、清淡、忌辛辣油腻。",
+     ["绿豆","赤小豆","薏苡仁","金银花","菊花","蒲公英","马齿苋","决明子","淡竹叶"],
+     ["绿豆百合汤","金银花菊花茶","马齿苋粥"],
+     "宜：清淡利湿。忌：酒、辛辣、烧烤、甜腻。"),
+    (7, "血瘀质", "面色晦暗、易现瘀斑、唇暗、肌肤甲错，舌紫暗有瘀点。",
+     "活血化瘀、温通、忌寒凉收涩。",
+     ["山楂","玫瑰花","黑木耳","桃仁","生姜","陈皮","当归","醋"],
+     ["山楂玫瑰茶","黑木耳红枣汤","姜枣茶"],
+     "宜：温通活血。忌：寒凉、油腻、久坐。"),
+    (8, "气郁质", "神情抑郁、胸胁胀闷、善太息、咽中异物感，舌淡红苔薄白。",
+     "疏肝理气、解郁、忌收敛滋腻。",
+     ["玫瑰花","佛手","香橼","橘红","代代花","麦芽","紫苏","薄荷","陈皮","蜂蜜"],
+     ["玫瑰花茶","佛手茶","陈皮麦芽饮"],
+     "宜：理气解郁。忌：咖啡过量、油腻、思虑过度。"),
+    (9, "特禀质", "易过敏（鼻炎/哮喘/荨麻疹）、先天失常、适应能力差。",
+     "益气固表、清淡、避开已知过敏原。",
+     ["山药","红枣","莲子","百合","蜂蜜","茯苓","薏苡仁","黑芝麻","乌梅","罗汉果"],
+     ["山药红枣粥","乌梅甘草饮","蜂蜜柠檬水"],
+     "宜：清淡、避开已知过敏原。忌：因人而异的发物（海鲜/芒果/坚果等）。"),
+]
+tz_cards = ""
+for idx, name, feat, prin, herbs, recs, avoid in consts:
+    chips = "".join(f'<span class="nut">{h}</span>' for h in herbs)
+    rec_html = " ｜ ".join(recs)
+    tz_cards += f'''
+    <div class="tcard">
+      <img src="{cimgs[idx]}" alt="{name}">
+      <div class="tbody">
+        <div class="tname">{idx}. {name}</div>
+        <div class="trow"><span class="k">特征</span><span>{feat}</span></div>
+        <div class="trow"><span class="k">食疗原则</span><span>{prin}</span></div>
+        <div class="trow"><span class="k">药食同源</span><div class="nutrow">{chips}</div></div>
+        <div class="trow"><span class="k">代表食疗方</span><span>{rec_html}</span></div>
+        <div class="trow tbad"><span class="k">宜忌</span><span>{avoid}</span></div>
+      </div>
+    </div>'''
+
+html = f'''<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>秋冬心脑养护 · 食谱库 + 九种体质食疗 + 个性计算器</title>
+<style>
+:root{{--bg:#f5f3ee;--card:#fffdf9;--ink:#2a2620;--sub:#7a7164;--line:#e7e0d4;
+--brand:#b8552e;--brand2:#3d7a4e;--ok:#3d7a4e;--warn:#c98a1e;--bad:#c0392b;--shadow:0 2px 12px rgba(80,60,30,.08)}}
+*{{box-sizing:border-box}} html,body{{margin:0}}
+body{{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.65}}
+.top{{background:linear-gradient(120deg,#b8552e,#8a3d20);color:#fff;padding:14px 16px}}
+.top .t{{font-size:18px;font-weight:800}} .top .s{{font-size:12.5px;opacity:.92;margin-top:2px}}
+.nav{{display:flex;position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px solid var(--line);overflow-x:auto}}
+.nav button{{flex:0 0 auto;border:none;background:none;padding:12px 18px;font-weight:700;font-size:14px;color:var(--sub);cursor:pointer;border-bottom:2px solid transparent}}
+.nav button.on{{color:var(--brand);border-bottom-color:var(--brand)}}
+.wrap{{max-width:880px;margin:0 auto;padding:16px}}
+.card{{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:var(--shadow)}}
+.card h3{{margin:0 0 10px;font-size:16px;display:flex;align-items:center;gap:8px}}
+.muted{{color:var(--sub);font-size:13px}}
+.grid{{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}}
+.rcard{{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:var(--shadow)}}
+.rcard img{{width:100%;height:170px;object-fit:cover;display:block;background:#f0ece4}}
+.rbody{{padding:12px}}
+.rname{{font-weight:800;font-size:15px;margin-bottom:6px}}
+.nutrow{{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:7px}}
+.nut{{font-size:11px;background:#fbeee6;color:var(--brand);border:1px solid #f0d9cc;padding:2px 8px;border-radius:20px;font-weight:700}}
+.rdesc{{font-size:13px;color:#4a4339}}
+.rtip{{font-size:12px;color:var(--brand2);margin-top:6px;background:#eef6f0;padding:6px 8px;border-radius:8px}}
+.tcard{{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:var(--shadow);display:flex;flex-direction:column}}
+.tcard img{{width:100%;height:160px;object-fit:cover;display:block;background:#f0ece4}}
+.tbody{{padding:12px;flex:1}}
+.tname{{font-weight:800;font-size:15.5px;margin-bottom:8px;color:var(--brand)}}
+.trow{{font-size:13px;color:#4a4339;margin:7px 0;display:flex;gap:7px;align-items:flex-start}}
+.trow .k{{flex:0 0 54px;font-weight:800;color:var(--sub);font-size:12px;padding-top:1px}}
+.trow .nutrow{{margin:0}}
+.tbad{{background:#fdecea;color:#a83a2c;padding:7px 8px;border-radius:8px}}
+.tbad .k{{color:#a83a2c}}
+.row{{display:flex;gap:10px;flex-wrap:wrap}} .opt{{flex:1;min-width:90px;border:1.5px solid var(--line);border-radius:10px;padding:9px;text-align:center;font-weight:600;font-size:13.5px;cursor:pointer;background:#fff}}
+.opt.sel{{border-color:var(--brand);background:#fbeee6;color:var(--brand)}}
+.lbl{{font-weight:700;font-size:13.5px;margin:12px 0 5px}}
+.txt{{border:1px solid var(--line);border-radius:9px;padding:9px;width:100%;font-size:14.5px;font-family:inherit}}
+.btn{{border:none;border-radius:10px;padding:13px;font-weight:800;font-size:15px;cursor:pointer;width:100%;background:var(--brand);color:#fff}}
+.btn.ghost{{background:#fff;color:var(--brand);border:1.5px solid var(--brand)}}
+.result{{margin-top:14px;border-radius:12px;padding:16px;background:#fff8f1;border:1px solid #ecd9c8}}
+.big{{font-size:26px;font-weight:800;color:var(--brand)}}
+.kv{{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px dashed var(--line);font-size:14px}}
+.kv:last-child{{border:none}}
+.tag{{display:inline-block;font-size:11px;padding:2px 8px;border-radius:20px;font-weight:700}}
+.tag.ok{{background:#eef6f0;color:var(--ok)}} .tag.warn{{background:#fdf3e0;color:var(--warn)}} .tag.bad{{background:#fdecea;color:var(--bad)}}
+.meal{{border:1px solid var(--line);border-radius:10px;padding:10px;margin:8px 0;background:#fff}}
+.meal .h{{font-weight:800;color:var(--brand2)}}
+.disc{{background:#fff8e6;border:1px dashed #e0b34a;color:#7a5a13;font-size:12.5px;padding:10px 12px;border-radius:10px;margin-top:10px}}
+.foot{{text-align:center;color:var(--sub);font-size:11px;padding:18px}}
+details{{margin-top:10px}} summary{{cursor:pointer;color:var(--sub);font-size:12.5px;font-weight:700}}
+.hide{{display:none}}
+</style>
+</head>
+<body>
+<div class="top"><div class="t">🍂 秋冬心脑养护 · 食谱库 + 九种体质食疗 + 计算器</div>
+<div class="s">面向中老年 · 低盐 · 高纤 · 富Ω-3 · 九种体质药食同源 · 透明化营养算法（非医疗诊断）</div></div>
+<div class="nav"><button class="on" data-tab="lib">📖 食谱库（10套）</button><button data-tab="tz">🌿 九种体质食疗</button><button data-tab="calc">🧮 个性营养计算器</button></div>
+<div class="wrap">
+
+<section id="lib">
+  <div class="card"><h3>🥗 10套秋冬心脑血管养护食谱</h3>
+  <p class="muted">每套标注<strong>重点营养素</strong>与食用贴士。均为家常低盐做法，适合中老年日常养护；不能替代药物与治疗。</p></div>
+  <div class="grid">{recipe_cards}</div>
+</section>
+
+<section id="calc" class="hide">
+  <div class="card">
+    <h3>🧮 个性营养食谱计算器</h3>
+
+    <div class="lbl">① 基础信息</div>
+    <div class="row">
+      <input class="txt" id="age" type="number" placeholder="年龄(岁)" style="flex:1;min-width:90px">
+      <select class="txt" id="sex" style="flex:1;min-width:90px"><option value="m">男</option><option value="f">女</option></select>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <input class="txt" id="h" type="number" placeholder="身高(cm)" style="flex:1;min-width:90px">
+      <input class="txt" id="w" type="number" placeholder="体重(kg)" style="flex:1;min-width:90px">
+    </div>
+    <div class="lbl">活动量</div>
+    <div class="row" data-q="act">
+      <div class="opt sel" data-v="1.2">久坐为主</div>
+      <div class="opt" data-v="1.375">轻度活动</div>
+      <div class="opt" data-v="1.55">中度活动</div>
+    </div>
+
+    <div class="lbl">② 健康关注（可多选）</div>
+    <div class="row" data-q="con" data-multi="1">
+      <div class="opt" data-v="lipid">关注血脂</div>
+      <div class="opt" data-v="bp">关注血压</div>
+      <div class="opt" data-v="glu">关注血糖</div>
+      <div class="opt" data-v="brain">关注脑供血</div>
+    </div>
+
+    <div class="lbl">③ 服药 / 过敏情况（可多选）</div>
+    <div class="row" data-q="med" data-multi="1">
+      <div class="opt" data-v="lipid">降脂药</div>
+      <div class="opt" data-v="bp">降压药</div>
+      <div class="opt" data-v="anti">抗凝/抗血小板</div>
+      <div class="opt" data-v="seafood">海鲜过敏</div>
+    </div>
+
+    <button class="btn" style="margin-top:16px" onclick="gen()">🚀 生成我的专属方案</button>
+    <div id="out"></div>
+
+    <details><summary>查看计算口径（公式透明）</summary>
+    <div class="muted" style="font-size:12.5px;margin-top:6px">
+    • BMI = 体重(kg) / 身高(m)²<br>
+    • 基础代谢 BMR（Mifflin-St Jeor）：男 10·w+6.25·h−5·age+5；女 10·w+6.25·h−5·age−161<br>
+    • 每日总消耗 TDEE = BMR × 活动系数（久坐1.2/轻度1.375/中度1.55）<br>
+    • 目标热量：BMI≥24 取 TDEE×0.9（温和控重）；BMI&lt;18.5 取 ×1.1；否则维持<br>
+    • 蛋白质：老年基线 1.0 g/kg；有慢病关注点或偏瘦取 1.2 g/kg<br>
+    • 供能比：蛋白17% / 脂肪27%(强调不饱和) / 碳水56%<br>
+    • 心脑重点目标：钠≤2000mg(≈5g盐)、膳食纤维25–30g、Ω-3(EPA+DHA)250–1000mg(深海鱼2次/周)、钾≥3500mg、镁≈320mg
+    </div></details>
+  </div>
+</section>
+
+<section id="tz" class="hide">
+  <div class="card"><h3>🌿 中医九种体质 · 药食同源食疗方案</h3>
+  <p class="muted">按<strong>王琦九种体质</strong>（国标 GB/T 30444）列出每类体质的食疗原则与代表方。所用食材均来自<strong>卫健委「药食同源」目录</strong>（既是食品又是中药材），非处方药材、不宣称治疗。与明一老师「三阴三阳六能体质」为不同辨识体系，门店落地可并行参考；体质辨识建议由中医师四诊合参。</p></div>
+  <div class="grid">{tz_cards}</div>
+  <div class="disc">药食同源食材属食物范畴，不能替代药物与治疗；过敏体质者请严格避开已知过敏原（如海鲜、芒果、坚果等因人而异）。本方案仅作膳食科普，建议结合门店「体质重塑」服务由专业人员解读。</div>
+</section>
+
+<div class="foot">本工具为营养科普与膳食规划辅助，不替代医师诊断与药物治疗。有特殊疾病或服药者请遵主治医嘱。</div>
+</div>
+
+<script>
+document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>{{
+  document.querySelectorAll('.nav button').forEach(x=>x.classList.toggle('on',x===b));
+  document.querySelectorAll('section').forEach(s=>s.classList.add('hide'));
+  document.getElementById(b.dataset.tab).classList.remove('hide');window.scrollTo(0,0);
+}});
+document.querySelectorAll('[data-q]').forEach(g=>g.querySelectorAll('.opt').forEach(o=>o.onclick=()=>{{
+  if(g.dataset.multi)o.classList.toggle('sel');else{{g.querySelectorAll('.opt').forEach(x=>x.classList.remove('sel'));o.classList.add('sel');}}
+}}));
+function qv(q){{const g=document.querySelector(`[data-q="${{q}}"]`);const s=[...g.querySelectorAll('.opt.sel')].map(o=>o.dataset.v);return g.dataset.multi?s:s[0];}}
+
+const REC = {{
+ 1:["番茄炖牛腩","少油少盐暖身，补蛋白"],
+ 2:["清蒸三文鱼","Ω-3最佳来源"],
+ 3:["黑木耳拌洋葱","凉拌助循环"],
+ 4:["紫菜蛋花汤","富钾清淡"],
+ 5:["燕麦红薯粥","β-葡聚糖控胆固醇"],
+ 6:["蒜蓉西兰花","富钾抗氧化"],
+ 7:["山药枸杞排骨汤","温和养脾"],
+ 8:["醋泡黑豆","花青素零食级"],
+ 9:["凉拌海带丝","褐藻酸助脂代谢"],
+ 10:["南瓜小米粥","镁+β胡萝卜素"]
+}};
+
+function gen(){{
+  const age=+document.getElementById('age').value, sex=document.getElementById('sex').value;
+  const h=+document.getElementById('h').value, w=+document.getElementById('w').value;
+  if(!age||!h||!w){{alert('请填全年龄、身高、体重');return;}}
+  const act=+qv('act'), con=new Set(qv('con')), med=new Set(qv('med'));
+  const bmi=w/((h/100)**2);
+  let bmr = 10*w+6.25*h-5*age+(sex==='m'?5:-161);
+  const tdee=bmr*act;
+  let adj = bmi>=24?0.9 : bmi<18.5?1.1 : 1.0;
+  const kcal=Math.round(tdee*adj/10)*10;
+  let ppk = (con.size>0||bmi<18.5)?1.2:1.0;
+  const pg=Math.round(w*ppk);
+  const pk=Math.round(kcal*0.17/4), fk=Math.round(kcal*0.27/9), ck=Math.round((kcal-pk*4-fk*9)/4);
+  const sp={{m:25,l:35,d:30,s:10}};
+  const warn=[];
+  if(bmi>=24)warn.push(['warn','BMI '+bmi.toFixed(1)+' 偏高，已按温和控重(×0.9)给热量，主食优先燕麦/南瓜替代精米。']);
+  if(bmi<18.5)warn.push(['warn','BMI '+bmi.toFixed(1)+' 偏低，已上调热量与蛋白，注意优质蛋白足量。']);
+  if(med.has('seafood'))warn.push(['bad','海鲜过敏：不吃清蒸三文鱼；紫菜/海带需先确认不过敏再食用。']);
+  if(med.has('anti'))warn.push(['warn','服用抗凝/抗血小板药：维K波动可能影响药效，海藻/深绿菜保持饮食稳定并遵医嘱，勿突然大量增减。']);
+  if(med.has('lipid')||med.has('bp'))warn.push(['warn','服药期间：本方案为膳食辅助，'+ (med.has('bp')?'降压药':'降脂药') +'照常服用，不替代。']);
+  if(con.has('bp'))warn.push(['ok','关注血压：全天食盐≤5g，多用海带/紫菜/西兰花补钾，少酱料。']);
+  if(con.has('lipid'))warn.push(['ok','关注血脂：每周2次深海鱼补Ω-3，燕麦/海带/黑豆帮控脂。']);
+  if(con.has('glu'))warn.push(['ok','关注血糖：主食换燕麦红薯粥/南瓜小米粥，少精制糖。']);
+  if(con.has('brain'))warn.push(['ok','关注脑供血：番茄红素+Ω-3+木耳洋葱，搭配适度活动。']);
+
+  // 推荐一日食谱（按关注点智能选）
+  let staple = con.has('glu')?'5':(con.has('bp')?'10':'5');
+  let protein = med.has('seafood')?'1':(con.has('lipid')?'2':'2');
+  let veg = con.has('bp')?'6':'3';
+  let soup = med.has('seafood')?'7':'4';
+  let snack = med.has('anti')?'10':'8';
+  // 主食方案：每餐都含主食，解决"缺主食"问题；主食随关注点切换
+  const noonStaple = con.has('glu') ? '荞麦面 / 燕麦饭（低GI主食）'
+                   : con.has('bp') ? '杂粮饭（糙米+燕麦米，富钾）'
+                   : '杂粮饭（糙米+燕麦米 1:1）';
+  const eveStaple = med.has('seafood') ? '蒸山药 / 蒸红薯（来自食谱7/5）' : '蒸红薯 / 杂粮饭';
+  const kl={{'早':sp.m,'午':sp.l,'晚':sp.d,'加餐':sp.s}};
+  const mealsArr = [
+    ['早','主食', REC[staple][0]+'（配水煮蛋1个/无糖酸奶）', REC[staple][1], sp.m],
+    ['午','主食 + 主菜', noonStaple+' ＋ '+REC[protein][0], REC[protein][1], sp.l],
+    ['晚','主食 + 蔬菜 + 汤', eveStaple+' ＋ '+REC[veg][0]+' ＋ '+REC[soup][0], REC[veg][1]+'；'+REC[soup][1], sp.d],
+    ['加餐','小食', REC[snack][0], REC[snack][1], sp.s],
+  ];
+  let meals='';
+  for(const [k,tag,name,note,p] of mealsArr){{meals+=`<div class="meal"><div class="h">${{k}} · ${{tag}}</div><div>${{name}}</div><div class="muted small">${{note}} · 约 ${{Math.round(kcal*p/100)}} kcal</div></div>`;}}
+
+  // 每日推荐蔬菜（单独成行，≥5种，任选轮换，不计入餐次热量）
+  const VEG=[['西兰花','萝卜硫素·钾·维C，抗氧化护血管'],['黑木耳','木耳多糖·膳食纤维，助循环'],['洋葱','硫化物·钾，家常凉拌'],['海带/紫菜','褐藻酸·钾·碘，利脂稳压'],['番茄','番茄红素，暖身护血管'],['山药','粘蛋白，温和养脾']];
+  let vegNames=''; VEG.forEach(function(v){{ vegNames+=v[0]+'、'; }});
+  let vegNotes=''; VEG.forEach(function(v){{ vegNotes+=v[0]+'：'+v[1]+' ｜ '; }});
+  let vegBlock='<div class="meal" style="background:#eef6f0;border-color:#cfe3d4"><div class="h">🥬 每日推荐蔬菜（任选3–5种轮换）</div><div>'+vegNames+'</div><div class="muted small">'+vegNotes+'</div></div>';
+
+  const whtml = warn.map(x=>`<div class="kv"><span class="tag ${{x[0]}}">${{x[0]==='bad'?'注意':x[0]==='warn'?'提示':'建议'}}</span><span>${{x[1]}}</span></div>`).join('');
+
+  document.getElementById('out').innerHTML = `
+  <div class="result">
+    <div style="font-weight:800;margin-bottom:4px">您的专属营养方案</div>
+    <div class="kv"><span>每日目标热量</span><span class="big">${{kcal}} kcal</span></div>
+    <div class="kv"><span>蛋白质</span><span>${{pg}} g（${{ppk}} g/kg）</span></div>
+    <div class="kv"><span>碳水 / 脂肪</span><span>${{ck}} g / ${{fk}} g（脂肪强调不饱和）</span></div>
+    <div class="kv"><span>BMI</span><span>${{bmi.toFixed(1)}}</span></div>
+    <div class="kv"><span>心脑重点目标</span><span>钠≤2000mg｜纤维25–30g｜Ω-3 250–1000mg｜钾≥3500mg｜镁≈320mg</span></div>
+    <div style="font-weight:800;margin:12px 0 2px">🍽 推荐一日食谱</div>
+    ${{meals}}
+    ${{vegBlock}}
+    <div style="font-weight:800;margin:12px 0 2px">⚠️ 个性化注意事项</div>
+    ${{whtml||'<div class="muted">暂无特殊提示。</div>'}}
+    <div class="disc">本结果为通用营养规划，不替代医疗诊断与药物。有特殊疾病/服药者请遵主治医嘱；海鲜过敏者禁用相关食谱。</div>
+  </div>`;
+}}
+</script>
+</body>
+</html>'''
+
+with open(OUT, "w", encoding="utf-8") as f:
+    f.write(html)
+print("written", OUT, len(html), "bytes")
